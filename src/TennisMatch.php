@@ -4,17 +4,23 @@ namespace App;
 
 class TennisMatch
 {
-    protected $playerOneScore = 0;
-    protected $playerTwoScore = 0;
+    protected Player $playerOne;
+    protected Player $playerTwo;
 
-    public function score()
+    public function __construct(Player $playerOne, Player $playerTwo)
+    {
+        $this->playerOne = $playerOne;
+        $this->playerTwo = $playerTwo;
+    }
+
+    public function score(): string
     {
         if($this->hasWinner()){
-            return 'Winner: ' . $this->leader();
+            return 'Winner: ' . $this->leader()->name;
         }
 
         if($this->hasAdvantage()){
-            return 'Advantage: ' . $this->leader();
+            return 'Advantage: ' . $this->leader()->name;
         }
 
         if($this->isDeuce()){
@@ -23,23 +29,24 @@ class TennisMatch
 
         return sprintf(
             '%s-%s',
-            $this->pointsToTerm($this->playerOneScore),
-            $this->pointsToTerm($this->playerTwoScore)
+            $this->playerOne->pointsToTerm(),
+            $this->playerTwo->pointsToTerm()
         );
     }
 
-    protected function hasWinner(): bool
+    protected function leader(): Player
     {
-        if($this->playerOneScore > 3 && $this->playerOneScore >= $this->playerTwoScore+2){
-            return true;
-        }
-        if($this->playerTwoScore > 3 && $this->playerTwoScore >= $this->playerOneScore+2){
-            return true;
-        }
-        return false;
+        return $this->playerOne->points > $this->playerTwo->points?
+            $this->playerOne:
+            $this->playerTwo;
     }
 
-    protected function hasAdvantage()
+    protected function isDeuce(): bool
+    {
+        return $this->enoughToWin() && $this->playerOne->points === $this->playerTwo->points;
+    }
+
+    protected function hasAdvantage(): bool
     {
         if($this->enoughToWin()){
             return ! $this->isDeuce();
@@ -47,45 +54,18 @@ class TennisMatch
         return false;
     }
 
-    public function isDeuce(): bool
+    protected function hasWinner(): bool
     {
-        return $this->enoughToWin() && $this->playerOneScore === $this->playerTwoScore;
-    }
-
-    protected function leader(): string
-    {
-        return $this->playerOneScore > $this->playerTwoScore?
-            'Player 1':
-            'Player 2';
-    }
-
-    public function enoughToWin(): bool
-    {
-        return $this->playerOneScore >= 3 && $this->playerTwoScore >= 3;
-    }
-
-
-    public function pointToPlayerOne()
-    {
-        $this->playerOneScore++;
-    }
-
-    public function pointToPlayerTwo()
-    {
-        $this->playerTwoScore++;
-    }
-
-    protected function pointsToTerm($points)
-    {
-        switch ($points){
-            case 0:
-                return 'love';
-            case 1:
-                return 'fifteen';
-            case 2:
-                return 'thirty';
-            case 3:
-                return 'forty';
+        // no player reached winning threshold?
+        if(max([$this->playerOne->points, $this->playerTwo->points]) < 4){
+            return false;
         }
+        return abs($this->playerOne->points - $this->playerTwo->points) >= 2;
     }
+
+    protected function enoughToWin(): bool
+    {
+        return $this->playerOne->points >= 3 && $this->playerTwo->points >= 3;
+    }
+
 }
